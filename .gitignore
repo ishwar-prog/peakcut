@@ -21,6 +21,9 @@ CLAUDE.local.md
 .vscode/
 .idea/
 *.bat
+!run.bat
+!setup.bat
+clips/
 Thumbs.db
 .DS_Store
 

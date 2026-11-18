@@ -1,64 +1,122 @@
-# Working on PeakCut
+# Working on PeakCut (AI Agent Instructions)
 
-A short map for contributors and AI coding assistants.
+A comprehensive guide for AI coding assistants (Qoder, Arena.ai, Cursor, Devin, Claude Code, Codex, Antigravity) and contributors.
 
-## Installing or updating PeakCut for someone
+---
 
-**Before installing, ask the person where to put it**, and suggest a short, permanent folder: `C:\peakcut` on
-Windows, `~/peakcut` on a Mac or Linux. Do not just clone into the folder you happen to be running in: AI assistants
-often run in a temporary, scratch or session workspace, which gets deleted, and whose path is long enough that
-Windows cannot load the speech library (Windows can't open files whose full path is over 260 characters; the error
-is "DLL load failed ... The filename or extension is too long"). Tell the person where you put it.
+## ⚡ Quick Start for AI Agents
 
-**When updating**, look at where PeakCut is first. If its folder path is long (roughly over 100 characters) or inside
-a temporary or assistant workspace, ask the person whether to move it to `C:\peakcut` (or `~/peakcut`) as part of the
-update. Moving is safe when done like this: clone the latest version into the new folder, copy over `.env`,
-`storage.json` and the `data` folder if there is one (the videos and clips; `storage.json` may point to a data folder
-elsewhere, which then stays where it is), install the requirements, start it from the new folder, check the clips
-are there, and only then offer to delete the old folder. Never delete anything without asking.
+When dropped into a new environment (container, sandbox, or local machine), run the setup script:
 
-## Run and test
+```bash
+# On Linux/macOS or cloud AI sandboxes (Arena.ai, Codespaces, Docker):
+bash setup.sh
 
-- Run: `python -m studio.server` (settings from `.env`; see `.env.example`). Needs Python 3.10+ and `ffmpeg`.
-- The speech model (about 480 MB) downloads by itself on first start; `python -m studio.fetch_model` gets it ahead of time.
-- Tests: `python tests/run.py`. It starts a throwaway copy on a spare port with an empty data folder. Run it
-  before and after any change to `studio/`. No keys needed.
-- To try a risky change by hand without touching real data:
-  `PEAKCUT_DATA=<temp folder> PEAKCUT_PORT=8766 python -m studio.server`.
+# On Windows:
+setup.bat
+```
 
-## Where things are
+This automatically:
+1. Installs `ffmpeg` and required multimedia libraries if missing.
+2. Sets up Python 3.10-3.12 and installs dependencies from `requirements.txt`.
+3. Pre-downloads the offline speech-to-text model (~480 MB).
 
-| File | What it does |
+---
+
+## 🎬 How to Generate Clips
+
+PeakCut provides two interfaces: **CLI** (ideal for autonomous AI agents and scripts) and **Web Studio** (for human users).
+
+### 1. Headless / CLI Execution (`clip.py`)
+AI agents in headless environments (like Qoder or Arena.ai) should use `clip.py` to create clips directly:
+
+```bash
+# Clip a YouTube, Twitch, or Kick URL
+python clip.py "https://www.youtube.com/watch?v=VIDEO_ID" --clips 3 --out ./clips
+
+# Clip a local video file
+python clip.py path/to/video.mp4 --style bounce --layout blur --out ./clips
+
+# Output JSON for programmatic parsing by AI agents:
+python clip.py path/to/video.mp4 --json
+```
+
+**JSON Output Format:**
+```json
+{
+  "status": "success",
+  "job_id": "20261118-...",
+  "title": "Video Title",
+  "duration": 340.5,
+  "clips_count": 3,
+  "ai_used": true,
+  "clips": [
+    {
+      "index": 1,
+      "id": "clip01",
+      "title": "Unbelievable moment",
+      "hook": "Wait till the end...",
+      "start": 12.4,
+      "end": 45.2,
+      "duration": 32.8,
+      "video_path": "/workspace/clips/01_Unbelievable_moment.mp4",
+      "cover_path": "/workspace/clips/01_Unbelievable_moment.jpg"
+    }
+  ],
+  "output_directory": "/workspace/clips"
+}
+```
+
+### 2. Web UI Execution
+```bash
+python -m studio.server
+# Dashboard opens on http://127.0.0.1:8765
+```
+
+---
+
+## 🔑 AI Key Configuration (BYOK & Fallback)
+
+- **Zero-Config Fallback:** PeakCut functions **100% out of the box without any API keys**. If no AI key is provided, it automatically detects engaging highlights using audio loudness and speech density.
+- **AI-Powered Selection:** To use LLM-driven highlight selection, hook generation, and smart titles, configure environment variables:
+  ```bash
+  export PEAKCUT_AI_PROVIDER=gemini        # gemini, openai, anthropic, groq, openrouter, ollama, custom
+  export PEAKCUT_AI_KEY="your-api-key"
+  export PEAKCUT_AI_MODELS="gemini-2.5-flash"
+  ```
+  Or pass `--ai-key "..." --ai-provider gemini` directly to `clip.py`.
+
+---
+
+## 🧪 Tests
+
+Run the full automated test suite without external dependencies or keys:
+```bash
+python tests/run.py
+```
+This boots an isolated instance on a temporary port, verifies permissions, upload chunking, caption geometry, loudness calculation, and queue handling, then cleans up.
+
+---
+
+## 📂 Project Architecture
+
+| File / Folder | Role |
 |---|---|
-| `studio/server.py` | Every web route, and the gate that runs before each request (who is asking, limits, headers) |
-| `studio/config.py` | Every setting, read from environment variables |
-| `studio/ai.py` | The only code that talks to an AI service, and the AI settings saved from the dashboard (`ai.json` in the data folder) |
-| `studio/brain.py` | The prompts: finding clips, live judging, hooks and titles, caption fixes |
-| `studio/usage.py` | The record of AI calls and tokens shown on the AI usage page |
-| `studio/jobs.py` | The video pipeline and the fair queue |
-| `studio/live.py` | Live recording and clipping |
-| `studio/transcribe.py`, `studio/asr_worker.py` | Speech to text, here or on a second machine |
-| `studio/render.py` | Cutting, layouts and captions (ffmpeg and Pillow) |
-| `studio/media.py` | Downloading (yt-dlp), probing, audio |
-| `studio/auth.py`, `studio/account.py`, `studio/admin.py` | Sign-in, deleting things, the admin dashboard |
-| `studio/db.py` | Database tables (SQLAlchemy core; SQLite or PostgreSQL) |
-| `web/index.html` | The whole signed-in app, one file, no build step |
+| `clip.py` | CLI entry point for AI agents and headless environments |
+| `setup.sh` / `setup.bat` | Universal one-step environment bootstrappers |
+| `studio/server.py` | FastAPI server routes, middleware, and health endpoints |
+| `studio/jobs.py` | Video pipeline: download -> audio extract -> transcribe -> AI picks -> render |
+| `studio/render.py` | 9:16 vertical formatting, caption overlays (ASS subtitles), ffmpeg render |
+| `studio/brain.py` | LLM prompts for clip scoring, hook generation, and title creation |
+| `studio/transcribe.py` | Local offline speech-to-text using `sherpa-onnx` and Parakeet model |
+| `studio/media.py` | Video downloading (`yt-dlp`), audio normalization, loudness analysis |
+| `studio/tools.py` | Auto-discovery for `ffmpeg` and `ffprobe` binaries |
+| `web/` | Vanilla HTML5/CSS/JS frontend dashboard (no node_modules build step required) |
 
-## Rules worth knowing
+---
 
-- **Sign-in is off by default** (`config.ACCOUNTS`): every request then belongs to one built-in owner
-  (`auth.local_user()`). With `PEAKCUT_ACCOUNTS=1` it is a normal multi-user site. Both paths are tested.
-- **Who is asking** always comes from the session (`ctx.uid()`), never from the request body. Background threads
-  set it themselves with `ctx.as_user(...)`.
-- **Anything that changes what a user sees must call `ctx.bump()`**. The page polls `/api/sync`, which answers
-  from memory when that user's counter has not moved.
-- **Text from videos is untrusted**: it goes into prompts through `brain._safe` and out through `brain._text`.
-- **Adding an AI provider**: add a row to `PROVIDERS` in `studio/ai.py`. If it speaks the OpenAI chat format that
-  is all; otherwise add one function that returns `(parsed JSON, tokens in, tokens out)`.
-- **Clips are rendered in a short temporary folder** and moved into place (`render.render_clip`): ffmpeg's caption
-  step cannot open paths longer than 260 characters on Windows.
-- **Secrets** are read from the environment or from files named by `*_FILE` settings. Never write a key, a real
-  address or a personal path into a tracked file.
-- **Pages** are plain HTML, CSS and JavaScript. Keep the existing palette, no shadows, and hover states that
-  change colour only.
-- Comments and messages are written in plain language for people who do not program. Keep that tone.
+## ⚠️ Key Environment Constraints
+
+1. **Path Lengths on Windows:** Keep workspace paths reasonably short. Windows has a 260-character MAX_PATH limit that can affect ffmpeg temporary caption render files if nested excessively.
+2. **Python Compatibility:** Python 3.10 to 3.12 is strongly recommended for pre-built binary wheels of `numpy`, `sherpa-onnx`, and `soundfile`.
+3. **FFmpeg:** Required. Automatically located by `studio/tools.py` in standard system paths, WinGet packages, Scoop shims, and Homebrew directories.

@@ -23,48 +23,49 @@ creator's live stream and clip the highlights while the stream is still running.
 
 ## Quick start
 
-You need Python 3.10 or newer and `ffmpeg`. On Windows: `winget install Gyan.FFmpeg`. On a Mac: `brew install ffmpeg`.
-On Linux: `sudo apt install ffmpeg`. PeakCut finds it by itself and tells you in the dashboard if it is missing.
-
-Put PeakCut in a short folder that stays put: `C:\peakcut` on Windows, `~/peakcut` on a Mac or Linux. Not inside a
-temporary folder or an AI assistant's workspace: those get cleaned up, and on Windows a folder that deep stops the
-speech model from loading (Windows can't open files whose full path is over 260 characters). If an AI assistant
-installs it for you, it should ask you where to put it first ([AGENTS.md](AGENTS.md) tells it to).
-
-On Windows:
-
+### 1. Automated Setup (Recommended for AI agents, Arena.ai, Qoder, and Local)
 ```bash
-git clone <this repository> C:\peakcut
+# On Linux / macOS / Cloud Sandboxes:
+bash setup.sh
+
+# On Windows:
+setup.bat
 ```
 
-```bash
-cd C:\peakcut
-```
+### 2. Manual Setup
+You need Python 3.10-3.12 and `ffmpeg`.
+- Windows: `winget install Gyan.FFmpeg`
+- macOS: `brew install ffmpeg`
+- Linux: `sudo apt install ffmpeg libsndfile1`
 
-On a Mac or Linux:
-
-```bash
-git clone <this repository> ~/peakcut
-```
-
-```bash
-cd ~/peakcut
-```
-
+Install dependencies:
 ```bash
 pip install -r requirements.txt
+python -m studio.fetch_model
 ```
 
-Start the server:
+---
 
+## 🚀 How to Use
+
+### Option A: Command Line (CLI for AI agents & headless environments)
+```bash
+# Clip from a YouTube, Twitch or Kick URL
+python clip.py "https://www.youtube.com/watch?v=..." --clips 3
+
+# Clip a local video file
+python clip.py sample.mp4 --style bounce --layout blur --out ./clips
+
+# Output as JSON (perfect for AI agents like Qoder, Arena.ai):
+python clip.py sample.mp4 --json
+```
+
+### Option B: Web Studio
+Start the server:
 ```bash
 python -m studio.server
 ```
-
-The first start downloads the speech model by itself (about 480 MB, once).
-
-Open http://127.0.0.1:8765. There is no sign-in: it opens straight into the dashboard. Go to **Settings, AI**, choose
-your AI service, paste your key and press **Save and test** (see [Choose your AI](#choose-your-ai)).
+Open http://127.0.0.1:8765 in your browser. There is no sign-in: it opens straight into the dashboard. Go to **Settings > AI** to add your AI key (or use loudness clipping with no key).
 
 ## Choose your AI
 
